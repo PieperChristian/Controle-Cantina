@@ -7,3 +7,84 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Candidata {
+  id            Int          @id @default(autoincrement())
+  nome          String       @db.VarChar(40)
+  clube         String       @db.VarChar(30)
+  idade         Int          @db.SmallInt 
+  escolaridade  Escolaridades
+  sonho         String       @db.VarChar(255)
+  numVotos      Int          @default(0)
+  votos         Voto[]
+  @@map("candidatas")
+}
+
+model Cliente {
+  id            Int          @id @default(autoincrement())
+  nome          String       @db.VarChar(40)
+  cpf           String       @db.VarChar(11)
+  email         String       @db.VarChar(80) @unique
+  cidade        String       @db.VarChar(30)
+  dataNasc      DateTime
+  votos         Voto[]
+  @@map("clientes")
+}
+
+model Voto {
+  id            Int          @id @default(autoincrement())
+  cliente       Cliente      @relation(fields: [clienteId], references: [id])
+  clienteId     Int 
+  candidata     Candidata    @relation(fields: [candidataId], references: [id])
+  candidataId   Int 
+  justificativa String?      @db.VarChar(255)
+  data          DateTime     @default(now())
+  @@map("votos")
+}
+
+enum Escolaridades {
+  Médio
+  Graduação
+  Pós_Graduação
+}
+
+model Aluno {
+  id Int @id @default(autoincrement())
+
+  nome String @db.VarChar(100)
+  turma String @db.Char(3)
+  responsavel String @db.VarChar(100)
+  emailResp String @unique @db.VarChar(200)
+  saldo Float @db.Float
+  observacoes String? @db.Text
+  depositos Deposito[]
+
+  @@map("alunos")
+}
+
+model Deposito {
+  id Int @id @default(autoincrement())
+  aluno Aluno @relation(fields: [alunoId], references: [id])
+  alunoId Int
+
+  tipo TipoDeposito
+  valor Float @db.Float
+  data DateTime @db.Date @default(now())
+
+  @@map("depositos")
+}
+
+model Produto {
+  id Int @id @default(autoincrement())
+
+  nome String @db.VarChar(100)
+  codigo String @db.Char(13)
+  descricao String? @db.Text
+
+  @@map("produtos")
+}
+
+enum TipoDeposito {
+  PIX
+  Depósito
+  Dinheiro
+}
