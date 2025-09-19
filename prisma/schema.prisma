@@ -10,90 +10,180 @@ datasource db {
 model Aluno {
   id Int @id @default(autoincrement())
 
-  nome String @db.VarChar(100)
-  turma String @db.Char(3)
-  responsavel String @db.VarChar(100)
-  emailResp String @unique @db.VarChar(200)
-  saldo Float @db.Float @default(0)
-  observacoes String? @db.Text
-  depositos Deposito[]
-  venda Venda[]
+  nome        String     @db.VarChar(100)
+  turma       String     @db.Char(3)
+  responsavel String     @db.VarChar(100)
+  emailResp   String     @unique @db.VarChar(200)
+  saldo       Decimal    @default(0) @db.Decimal(10, 2)
+  observacoes String?    @db.Text
+  depositos   Deposito[]
+  venda       Venda[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
+  @@index([turma])
+  @@index([nome])
   @@map("alunos")
 }
 
 model Deposito {
-  id Int @id @default(autoincrement())
-  aluno Aluno @relation(fields: [alunoId], references: [id])
+  id      Int   @id @default(autoincrement())
+  aluno   Aluno @relation(fields: [alunoId], references: [id])
   alunoId Int
 
-  tipo TipoDeposito
-  valor Float @db.Float
-  data DateTime @db.Date @default(now())
+  tipo      TipoDeposito
+  valor     Decimal      @db.Decimal(10, 2)
+  data      DateTime     @default(now()) @db.Date
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
+  @@index([alunoId])
+  @@index([data])
   @@map("depositos")
 }
 
 model Produto {
   id Int @id @default(autoincrement())
-  compra Compra @relation(fields: [compraId], references: [id])
-  compraId Int
-  estoque Estoque @relation(fields: [estoqueId], references: [id])
-  estoqueId Int
 
-  nome String @db.VarChar(100)
-  codigo String @db.Char(13)
+  nome      String  @db.VarChar(100)
+  codigo    String  @unique @db.Char(13)
   descricao String? @db.Text
+  categoria String? @db.VarChar(50)
 
+  // Relacionamentos
+  estoque      Estoque?
+  itensCompra  ItemCompra[]
+  itensEstoque ItemEstoque[]
+  itensVenda   ItemVenda[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([codigo])
+  @@index([nome])
+  @@index([categoria])
   @@map("produtos")
 }
 
 model Compra {
   id Int @id @default(autoincrement())
-  estoque Estoque @relation(fields: [estoqueId], references: [id])
-  estoqueId Int
 
-  nome String @db.VarChar(100)
-  codigo String @db.Char(13)
-  valorCompra Float @db.Float
-  quantidade Int @db.Int
-  data DateTime @db.Date @default(now())
-  observacao String? @db.Text
-  produto Produto[]
+  fornecedor String   @db.VarChar(100)
+  notaFiscal String?  @db.VarChar(50)
+  data       DateTime @default(now()) @db.Date
+  valorTotal Decimal  @default(0) @db.Decimal(10, 2)
+  observacao String?  @db.Text
+
+  // Relacionamentos
+  itens ItemCompra[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("compras")
+}
+
+model ItemCompra {
+  id Int @id @default(autoincrement())
+
+  compra    Compra  @relation(fields: [compraId], references: [id], onDelete: Cascade)
+  compraId  Int
+  produto   Produto @relation(fields: [produtoId], references: [id])
+  produtoId Int
+
+  quantidade    Int     @db.Int
+  valorUnitario Decimal @db.Decimal(10, 2)
+  valorTotal    Decimal @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("itens_compra")
 }
 
 model Estoque {
   id Int @id @default(autoincrement())
 
-  nome String @db.VarChar(100)
-  codigo String @db.Char(13)
-  quantidade Int @db.Int @default(0)
-  valor Float @db.Float
-  produto Produto[]
-  compra Compra[]
-  venda Venda[]
+  produto   Produto @relation(fields: [produtoId], references: [id])
+  produtoId Int     @unique
+
+  quantidade    Int     @default(0) @db.Int
+  valorUnitario Decimal @db.Decimal(10, 2)
+  estoqueMinimo Int     @default(5) @db.Int
+  localizacao   String? @db.VarChar(50)
+
+  // Relacionamentos
+  itens ItemEstoque[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("estoques")
 }
 
-model Venda {
+model ItemEstoque {
   id Int @id @default(autoincrement())
-  aluno Aluno @relation(fields: [alunoId], references: [id])
-  alunoId Int
-  estoque Estoque @relation(fields: [estoqueId], references: [id])
-  estoqueId Int
 
-  quantidade Int @db.Int
-  valorVenda Float @db.Float
-  data DateTime @db.Date @default(now())
+  estoque   Estoque @relation(fields: [estoqueId], references: [id], onDelete: Cascade)
+  estoqueId Int
+  produto   Produto @relation(fields: [produtoId], references: [id])
+  produtoId Int
+
+  tipoMovimento TipoMovimento
+  quantidade    Int           @db.Int
+  valorUnitario Decimal       @db.Decimal(10, 2)
+  observacao    String?       @db.VarChar(255)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("itens_estoque")
+}
+
+model Venda {
+  id      Int   @id @default(autoincrement())
+  aluno   Aluno @relation(fields: [alunoId], references: [id])
+  alunoId Int
+
+  valorTotal Decimal  @default(0) @db.Decimal(10, 2)
+  data       DateTime @default(now()) @db.Date
+  observacao String?  @db.VarChar(255)
+
+  // Relacionamentos  
+  itens ItemVenda[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("vendas")
+}
+
+model ItemVenda {
+  id Int @id @default(autoincrement())
+
+  venda     Venda   @relation(fields: [vendaId], references: [id], onDelete: Cascade)
+  vendaId   Int
+  produto   Produto @relation(fields: [produtoId], references: [id])
+  produtoId Int
+
+  quantidade    Int     @db.Int
+  valorUnitario Decimal @db.Decimal(10, 2)
+  valorTotal    Decimal @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("itens_venda")
 }
 
 enum TipoDeposito {
   PIX
   Depósito
   Dinheiro
+}
+
+enum TipoMovimento {
+  ENTRADA
+  SAIDA
+  AJUSTE
 }
