@@ -75,12 +75,45 @@ model Deposito {
 
 model Produto {
   id Int @id @default(autoincrement())
+  compra Compra @relation(fields: [compraId], references: [id])
+  compraId Int
+  estoque Estoque @relation(fields: [estoqueId], references: [id])
+  estoqueId Int
 
   nome String @db.VarChar(100)
   codigo String @db.Char(13)
   descricao String? @db.Text
 
   @@map("produtos")
+}
+
+model Compra {
+  id Int @id @default(autoincrement())
+  estoque Estoque @relation(fields: [estoqueId], references: [id])
+  estoqueId Int
+
+  nome String @db.VarChar(100)
+  codigo String @db.Char(13)
+  valorCompra Float @db.Float
+  quantidade Int @db.Int
+  data DateTime @db.Date @default(now())
+  observacao String? @db.Text
+  produto Produto[]
+
+  @@map("compras")
+}
+
+model Estoque {
+  id Int @id @default(autoincrement())
+
+  nome String @db.VarChar(100)
+  codigo String @db.Char(13)
+  quantidade Int @db.Int
+  preco Float @db.Float
+  produto Produto[]
+  compra Compra[]
+
+  @@map("estoques")
 }
 
 enum TipoDeposito {
